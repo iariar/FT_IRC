@@ -264,26 +264,51 @@ void	Server::TOPIC_handler(User &user, msg_parse &command)
 void		Server::JOIN_handler(User &user, msg_parse &command)
 {
 	std::string channels = command.get_cmd_params()[0];
-	std::string keys = command.get_cmd_params()[1];
-	size_t channel_index = 0;
-	size_t key_index = 0;
 	if (channels == "0")
 	{
-		std::cout << "User should leave all channels" << std::endl;
+		if (user.get_nb_channels())
+		{
+			//part
+			std::cout << "User should leave all channels" << std::endl;
+		}
 	}
 	if (command.get_cmd_params().size() == 2)
 	{
+		std::string keys = command.get_cmd_params()[1];
+		size_t channel_index = 0;
+		int prev_channel_index = 0;
+		size_t key_index = 0;
+		int prev_key_index = 0;
+		int prev_chan_index = 0;
+		std::string sub_string;
 		while ((channel_index = channels.find(',', channel_index)) != std::string::npos)
 		{
-			while ((key_index = channels.find(',', key_index)) != std::string::npos)
+			while ((key_index = keys.find(',', key_index)) != std::string::npos)
 			{
-
+				// sub_string = channels.substr(prev_key_index, key_index - prev_key_index + 1);
+				// if (find_channel(sub_string[0], sub_string.substr(1, sub_string.length() - 1)) == __channels.end())
+				// {
+				// 	// Channel new_chan(sub_string[0], sub_string.substr(1, sub_string.length() - 1) , "", 1);
+				// 	// new_chan.set_password(sub_string);
+				// 	add_channel(sub_string.substr(1, sub_string.length() - 1), sub_string);
+				// 	Channel chan = *find_channel(sub_string[0], sub_string.substr(1, sub_string.length() - 1));
+				// 	// chan.set
+				// 	// user.set_modes('o');
+				// 	// user.set_modes('O');
+				// }
+				// else
+				// {
+				// 	std::cout << "check if key is right and join channle" << std::endl;
+				// }
 				key_index++;
+				prev_key_index = key_index;
 			}
 			channel_index++;
+			prev_chan_index = channel_index;
 		}
 	}
-	write_reply(user.get_fd(), "Wrong number of params\n");
+	else
+		write_socket(user.get_fd(), "Wrong number of params\n");
 }
 
 void	Server::check_command(msg_parse &command, User &user)

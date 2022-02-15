@@ -87,7 +87,7 @@ std::string	Server::get_motd() const
 	return this->__motd;
 }
 
-std::list<Channel>	Server::get_channels() 
+std::set<Channel>	&Server::get_channels() 
 {
 	return this->__channels;
 }
@@ -428,15 +428,17 @@ int			Server::disconnect_user(const User &u)
 	return 0;
 }
 
-std::list<Channel>::iterator	Server::add_channel(std::string name, std::string password)
+std::set<Channel>::iterator	Server::add_channel(std::string name, std::string password)
 {
-	this->__channels.push_back(Channel(name, password));
+	this->__channels.insert(Channel(name, password));
+	// Channel chan(name, password);
+	// this->__channels.insert(chan);
 	return (this->__channels.end());
 }
 
 int 							Server::delete_channel(std::string name)
 {
-	for (std::list<Channel>::iterator begin = this->__channels.begin(); begin != this->__channels.end(); begin++)
+	for (std::set<Channel>::iterator begin = this->__channels.begin(); begin != this->__channels.end(); begin++)
 	{
 		if ((*begin).get_name() == name)
 		{
@@ -447,9 +449,9 @@ int 							Server::delete_channel(std::string name)
 	return (this->__channels.size());
 }
 
-std::list<Channel>::iterator	Server::find_channel(char prefix, std::string name)
+std::set<Channel>::iterator	Server::find_channel(char prefix, std::string name)
 {
-	std::list<Channel>::iterator	begin;
+	std::set<Channel>::iterator	begin;
 
 	for (begin = this->__channels.begin(); begin != this->__channels.end(); begin++)
 	{
