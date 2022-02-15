@@ -57,7 +57,7 @@ class Server
 		std::list<User>			__users;
 		fd_set					__sockets;
 		std::string				__motd;
-		std::set<Channel>		__channels;
+		std::list<Channel>		__channels;
 		std::set<std::string>	__list_nicks;
 
 		// * Copliens form
@@ -77,7 +77,7 @@ class Server
 		int	get_serverfd() const;
 		std::list<User>	get_users();
 		std::string	get_motd() const;
-		std::set<Channel>	&get_channels();
+		std::list<Channel>	&get_channels();
 
 		// * Setters
 		void	set_name(std::string name);
@@ -107,10 +107,10 @@ class Server
 		User							*getuserbyfd(int fd);
 		int								disconnect_user(const std::list<User>::iterator &it);
 		int								disconnect_user(const User &u);
-		std::set<Channel>::iterator		add_channel(std::string name, std::string password);
+		std::list<Channel>::iterator		add_channel(std::string name, std::string password);
 		int 							delete_channel(std::string name);
-		std::set<Channel>::iterator		has_channel(std::string full_name);
-		std::set<Channel>::iterator		find_channel(char prefix, std::string name);
+		std::list<Channel>::iterator		has_channel(std::string full_name);
+		std::list<Channel>::iterator		find_channel(char prefix, std::string name);
 		// start commands
 		void							check_command(msg_parse &command, User &user);
 		void							user_authentication( msg_parse &command, User &user);
