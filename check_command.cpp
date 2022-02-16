@@ -24,191 +24,6 @@ void	print_command(msg_parse &command)
 	std::cout << "additional param :" << command.get_additional_param() << "|" << std::endl;
 }
 
-void	Server::user_authentication( msg_parse &command, User &user)
-{
-	if (command.get_cmd() == "NICK")
-	{
-		if (command.get_cmd_params().size() == 1)
-		{
-			if (strlen(command.get_cmd_params().front()) <= 9 && check_for_bad_char(command.get_cmd_params().front()))
-			{
-				if (__list_nicks.insert(command.get_cmd_params().front()).second)
-					user.set_nickname(command.get_cmd_params().front());
-				else 
-					write_reply(user, ERR_NICKNAMEINUSE, command);
-			}
-			else
-				write_reply(user, ERR_ERRONEUSNICKNAME, command);
-
-		}
-		else
-			write_reply(user, ERR_NONICKNAMEGIVEN, command);
-
-	}
-	else if (command.get_cmd() == "USER")
-	{
-		if (!user.get_realname().size())
-		{
-			if (command.get_cmd_params().size() == 4 || command.get_cmd_params().size() == 3)
-			{
-				// mode implementation stays
-				// {
-				// // std::string str = "MODE " + user.get_nickname() + " " + command.get_cmd_params()[1]; //ugly i kknow
-				// // msg_parse mode_msg(str);			
-				// // mode_msg.parser();
-				// // user_mode_setter(mode_msg, user);
-				// }
-				user.set_username(command.get_cmd_params().front());
-				/* <user> <mode> <unused> <realname>*/
-				// user.set_modes((int)command.get_cmd_params()[2]);
-				if (command.get_cmd_params().size() == 4)
-					user.set_realname(command.get_cmd_params()[3]);
-				else
-					user.set_realname(command.get_additional_param());
-			}
-			else
-			{
-				write_reply(user, ERR_NEEDMOREPARAMS, command);
-			}
-		}
-		else
-			write_reply(user, ERR_ALREADYREGISTRED, command);
-		// std::cout << user.get_username() << std::endl;
-	}
-	else if (command.get_cmd() == "PASS")
-	{
-		if (user.get_pass_check() && command.get_cmd_params().size())
-		{
-			write_reply(user, ERR_ALREADYREGISTRED, command);
-		}
-		else if (command.get_cmd_params().size() == 1 && __password == *command.get_cmd_params().begin())
-		{
-			std::cout << "PASS CHECKED" << std::endl;
-			user.set_pass_check(TRUE);
-		}
-		else if (command.get_cmd_params().size() == 0)
-		{
-			write_reply(user, ERR_NEEDMOREPARAMS, command);
-		}
-	}
-	if (!user.get_nickname().empty()  && !user.get_username().empty() && user.get_pass_check() == 1)
-	{
-		user.set_is_real_user(TRUE);
-		write_reply(user, RPL_WELCOME, command);
-		user.set_pass_check(2);
-	}
-}
-
-int		Server::PRIVMSG_handler(msg_parse &command, User &user)
-{
-	// if ()
-	// {
-
-	// }
-	return (1);
-}
-
-int		Server::user_mode_setter(msg_parse &command, User &user)
-{
-	if (command.get_cmd_params().size() >= 2)
-	{
-		if (command.get_cmd_params()[0] == user.get_nickname())
-		{
-			if (command.get_cmd_params()[1][0] == '+')
-			{
-				for (int i = 1; i < strlen(command.get_cmd_params()[1]); i++)
-				{
-					if (command.get_cmd_params()[1][i] == 'i' || command.get_cmd_params()[1][i] == 'w' || command.get_cmd_params()[1][i] == 'r' || command.get_cmd_params()[1][i] == 's')
-						user.set_modes(command.get_cmd_params()[1][i]);
-					else if (command.get_cmd_params()[1][i] != 'a' && command.get_cmd_params()[1][i] != 'o' && command.get_cmd_params()[1][i] != 'O')
-					{
-						write_reply(user, ERR_UMODEUNKNOWNFLAG, command);
-						break ;
-					}
-				}
-				
-			}
-			else if (command.get_cmd_params()[1][0] == '-')
-			{
-				for (int i = 1; i < strlen(command.get_cmd_params()[1]); i++)
-				{
-					if (command.get_cmd_params()[1][i] == 'i' || command.get_cmd_params()[1][i] == 'w' || command.get_cmd_params()[1][i] == 'o' || command.get_cmd_params()[1][i] == 'O' || command.get_cmd_params()[1][i] == 's')
-						user.unset_modes(command.get_cmd_params()[1][i]);
-					else if (command.get_cmd_params()[1][i] != 'a' && command.get_cmd_params()[1][i] != 'r')
-					{
-						write_reply(user, ERR_UMODEUNKNOWNFLAG, command);
-						break ;
-					}
-				}
-			}
-		}
-		else
-			write_reply(user, ERR_USERSDONTMATCH, command);
-	}
-	else if (command.get_cmd_params().size() == 1)
-		write_socket(user.get_fd(), "The available modes are as follows:\na - user is flagged as away;\ni - marks a users as invisible;\nw - user receives wallops;\nr - restricted user connection;\no - operator flag;\nO - local operator flag;\ns - marks a user for receipt of server notices.\n");
-	else
-		write_reply(user, ERR_NEEDMOREPARAMS, command);
-	return (1);
-}
-
-int		Server::MODE_handler(msg_parse &command, User &user)
-{
-	if (command.get_cmd_params().size() &&  __list_nicks.find(command.get_cmd_params().front()) != __list_nicks.end())
-	{
-		user_mode_setter( command, user);
-	}
-	else
-	{
-		write_reply(user, ERR_USERSDONTMATCH, command);
-	}
-	return (1);
-}
-
-int		Server::AWAY_handler(msg_parse &command, User &user)
-{
-	if (command.get_additional_param().size())
-	{
-		user.set_modes(1);
-		user.set_away_msg(command.get_additional_param());
-		write_reply(user, RPL_NOWAWAY, command);
-	}
-	else
-	{
-		user.unset_modes(1);
-		write_reply(user, RPL_UNAWAY, command);
-	}
-	return (1);
-}
-
-void	Server::QUIT_handler(User &user, msg_parse &command)
-{
-	std::string full_msg = "Closing Link: HOST_NAME";
-
-	// if (command.get_cmd_params().size())
-	// 	full_msg = ":" + this->__name + "@" + command.get_cmd_params().front() + " 433 :Nickname is already in use\n" + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname();
-	write_socket(user.get_fd(), full_msg);
-	this->disconnect_user(user);
-}
-
-void	Server::OPER_handler(User &user, msg_parse &command)
-{
-	if (command.get_cmd_params().size() >= 1)
-	{
-		// <username(will be ignored)> <(server)password>
-		if (command.get_cmd_params().size() > 1 && command.get_cmd_params()[1] == this->__password)
-		{
-			user.set_modes('o');
-			user.set_modes('O');
-			write_reply(user, RPL_YOUREOPER, command);
-		}
-		else
-			write_reply(user, ERR_PASSWDMISMATCH, command);
-	}
-	else
-		write_reply(user, ERR_NEEDMOREPARAMS, command);
-}
-
 User		*Server::find_user_in_channel(User user, Channel &channel)
 {
 	std::list<User *>::iterator it = channel.get_users().begin();
@@ -220,95 +35,88 @@ User		*Server::find_user_in_channel(User user, Channel &channel)
 	return *it;
 }
 
-void	Server::TOPIC_handler(User &user, msg_parse &command)
+void	Server::WHOIS_handler(msg_parse &command, User &user)
 {
-	if (command.get_cmd_params().size() >= 1)
-	{
-		if (command.get_cmd_params().size() == 1)
-		{
-			// std::string	full_msg = ":" + this->__name + command.get_cmd() + " 332 " + command.get_cmd_params()[0] + ":" + command.get_cmd_params()[1] + " " + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"; 
-			// send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
-			write_reply(user, RPL_TOPIC, command);
-		}
-		else							//should be checked when there is a channel 
-		{
-			Channel chan;
-			if (find_channel(command.get_cmd_params()[0][0], command.get_cmd_params()[0]) != __channels.end())
-			{
-				std::string str = command.get_cmd_params()[0];
-				str.erase(0, 1);
-				std::cout << "this is the string after the prefix was deleted " << str << "|" << std::endl;
-				chan = *find_channel(command.get_cmd_params()[0][0], str);
-				if (find_user_in_channel(user, chan) == *chan.get_users().end())
-				{
-					write_reply(user, ERR_NOTONCHANNEL, command);
-					return ;
-				}
-				if (!(!user.get_modes().get_a() && chan.get_modes().get_i()))
-				{
-					if (command.get_cmd_params().size() == 2)
-						chan.set_topic(command.get_cmd_params()[1]);
-					else if (command.get_additional_param().size())
-						chan.set_topic(command.get_additional_param());
-					write_reply(user, RPL_TOPIC, command);
-				}
-			}
-			else
-				write_socket(user.get_fd(), "Channel not found\n");
-		}
-	}
+	User	*tmp;
+	if (command.get_cmd_params().size() == 0)
+		write_reply(user, ERR_NONICKNAMEGIVEN, command);
 	else
-		write_reply(user, ERR_NEEDMOREPARAMS, command);
+		tmp = getuserbynick(command.get_cmd_params().front());
+	if (tmp == nullptr)
+		write_reply(user, ERR_NOSUCHNICK, command);
+	else if (command.get_cmd_params().size() == 1 && tmp)
+	{
+		write_reply(user, RPL_WHOISUSER, command);
+		write_reply(user, RPL_WHOISSERVER, command);
+		write_reply(user, RPL_ENDOFWHOIS, command);
+	}
 }
 
-void		Server::JOIN_handler(User &user, msg_parse &command)
+int		Server::PRIVMSG_handler(msg_parse &command, User &user)
 {
-	std::string channels = command.get_cmd_params()[0];
-	if (channels == "0")
-	{
-		if (user.get_nb_channels())
-		{
-			//part
-			std::cout << "User should leave all channels" << std::endl;
-		}
-	}
-	if (command.get_cmd_params().size() == 2)
-	{
-		std::string keys = command.get_cmd_params()[1];
-		size_t channel_index = 0;
-		int prev_channel_index = 0;
-		size_t key_index = 0;
-		int prev_key_index = 0;
-		int prev_chan_index = 0;
-		std::string sub_string;
-		while ((channel_index = channels.find(',', channel_index)) != std::string::npos)
-		{
-			while ((key_index = keys.find(',', key_index)) != std::string::npos)
-			{
-				// sub_string = channels.substr(prev_key_index, key_index - prev_key_index + 1);
-				// if (find_channel(sub_string[0], sub_string.substr(1, sub_string.length() - 1)) == __channels.end())
-				// {
-				// 	// Channel new_chan(sub_string[0], sub_string.substr(1, sub_string.length() - 1) , "", 1);
-				// 	// new_chan.set_password(sub_string);
-				// 	add_channel(sub_string.substr(1, sub_string.length() - 1), sub_string);
-				// 	Channel chan = *find_channel(sub_string[0], sub_string.substr(1, sub_string.length() - 1));
-				// 	// chan.set
-				// 	// user.set_modes('o');
-				// 	// user.set_modes('O');
-				// }
-				// else
-				// {
-				// 	std::cout << "check if key is right and join channle" << std::endl;
-				// }
-				key_index++;
-				prev_key_index = key_index;
-			}
-			channel_index++;
-			prev_chan_index = channel_index;
-		}
-	}
+	User	*receiver;
+	std::string	tmp;
+	std::string	target;
+	std::string	channel_name;
+	std::list<Channel>::iterator ch_it;
+	std::string mail = user.full_id() + " ";
+	char	msg[command.get_additional_param().length() + mail.length() + 1];
+
+	// number of params is 1 + text to send
+	// check if param[1] is a user or channel
+	if (command.get_additional_param().empty())
+		command.get_cmd() == "PRIVMSG" ? write_reply(user, ERR_NOTEXTTOSEND, command) : 0;
 	else
-		write_socket(user.get_fd(), "Wrong number of params\n");
+	{
+		strcpy(msg, mail.c_str());
+		strcpy(msg + mail.length(), command.get_additional_param().c_str());
+	}
+	if (command.get_cmd_params().size() < 1)
+		command.get_cmd() == "PRIVMSG" ? write_reply(user, ERR_NORECIPIENT, command) : 0;
+	target = command.get_cmd_params()[0];
+	if (command.get_cmd_params().size() > 1)
+		command.get_cmd() == "PRIVMSG" ? write_reply(user, ERR_TOOMANYTARGETS, command) : 0;
+	else if (target.find("!") == 0 || target.find("#") == 0 || target.find("&") == 0 || target.find("+") == 0)
+	{
+		// send message to channel users
+		tmp = command.get_cmd_params()[0];
+		channel_name = tmp.substr(1);
+		for (ch_it = this->__channels.begin(); ch_it != this->__channels.end(); ch_it++)
+		{
+			if ((*ch_it).get_name() == tmp)
+			{
+				for (std::list<User>::iterator it2 = this->__users.begin(); it2 != this->__users.end(); it2++)
+					send((*it2).get_fd(),  + msg, strlen(msg), 0);
+				break ;
+			}
+		}
+		if (ch_it == this->__channels.end())
+			write_reply(user, ERR_NOSUCHNICK, command);
+	}
+	else if (command.get_cmd_params().size() > 0 && !command.get_additional_param().empty())
+	{
+		if ((receiver = getuserbynick(command.get_cmd_params().front())) == nullptr)
+			command.get_cmd() == "PRIVMSG" ? write_reply(user, ERR_NOSUCHNICK, command) : 0;
+		else
+		{
+			if (receiver->get_modes().get_a())
+				command.get_cmd() == "PRIVMSG" ? write_reply(user, RPL_AWAY, command) : 0;
+			else
+				send(receiver->get_fd(), msg, strlen(msg), 0);
+		}
+	}
+	// ADD A CONDITION FOR WHEN THE CLIENT GIVES A MASK INSTEAD OF USER NICK OR CHANNEL
+
+	return (1);
+}
+
+void	Server::LUSERS_handler(msg_parse &command, User &user)
+{
+	write_reply(user, RPL_LUSERCLIENT, command);
+	write_reply(user, RPL_LUSEROP, command);
+	write_reply(user, RPL_LUSERUNKNOWN, command);
+	write_reply(user, RPL_LUSERCHANNELS, command);
+	write_reply(user, RPL_LUSERME, command);
 }
 
 void	Server::check_command(msg_parse &command, User &user)
@@ -325,7 +133,15 @@ void	Server::check_command(msg_parse &command, User &user)
 				MODE_handler(command, user);
 			else if (command.get_cmd() == "AWAY")
 				AWAY_handler(command, user);
-			else if (command.get_cmd() == "PRIVMSG")
+			else if (command.get_cmd() == "WHOIS")
+			{
+				WHOIS_handler(command, user);
+			}
+			else if (command.get_cmd() == "LUSERS")
+			{
+				LUSERS_handler(command, user);
+			}
+			else if (command.get_cmd() == "PRIVMSG" || command.get_cmd() == "NOTICE")
 				PRIVMSG_handler(command, user);
 			else if (command.get_cmd() == "QUIT")
 				QUIT_handler(user , command);
@@ -335,6 +151,10 @@ void	Server::check_command(msg_parse &command, User &user)
 				TOPIC_handler(user, command);
 			else if (command.get_cmd() == "JOIN")
 				JOIN_handler(user, command);
+			else
+			{
+				write_reply(user, ERR_UNKNOWNCOMMAND, command);
+			}
 		}
 		else
 			write_reply(user, ERR_NOTREGISTERED, command);
@@ -344,7 +164,7 @@ void	Server::check_command(msg_parse &command, User &user)
 	//check if command is valid 
 }
 
-int		Server::write_reply(User &user, int reply_code, msg_parse &command) const
+int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 {
 	if (reply_code == RPL_WELCOME)
 	{
@@ -417,11 +237,119 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command) const
 		std::string	full_msg = ":" + this->__name + command.get_cmd() + " 332 " + command.get_cmd_params()[0] + ":" + command.get_cmd_params()[1] + " " + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
+	else if (reply_code == ERR_INVITEONLYCHAN)
+	{
+		std::string	full_msg = ":" + this->__name + command.get_cmd() + " 473 " + command.get_cmd_params()[0] + ":Cannot join channel (+i)\n" + " " + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"; 
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == ERR_BANNEDFROMCHAN)
+	{
+		std::string	full_msg = ":" + this->__name + command.get_cmd() + " 474 " + command.get_cmd_params()[0] + ":Cannot join channel (+b)\n" + " " + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"; 
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == ERR_BADCHANNELKEY)
+	{
+		std::string	full_msg = ":" + this->__name + command.get_cmd() + " 475 " + command.get_cmd_params()[0] + ":Cannot join channel (+k)\n" + " " + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"; 
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
 	else if (reply_code == ERR_NOTONCHANNEL)
 	{
 		std::string	full_msg = ":" + this->__name + command.get_cmd() + " 442 " + command.get_cmd_params()[0] + ":You're not on that channel\n" + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
+	else if (reply_code == ERR_NORECIPIENT)
+	{
+		std::string const_msg = " 411 :No recipient given (" + command.get_cmd() + ")\n";
+		std::string	full_msg = ":" + this->__name + " 411 :No recipient given (" + command.get_cmd() + ")\n" + user.full_id() + " ";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == ERR_NOTEXTTOSEND)
+	{
+		std::string const_msg = command.get_cmd() + " 412 :No text to send\n";
+		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 412 :No text to send\n" + user.full_id() + " ";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == ERR_NOSUCHNICK)
+	{
+		std::string const_msg = command.get_cmd() + " 401 :No such nick/channel\n";
+		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 401 :No such nick/channel\n" + user.full_id() + " ";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == ERR_TOOMANYTARGETS)
+	{
+		std::string const_msg = command.get_cmd() + " 407 :Too many recipients\n";
+		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 407 :Too many recipients\n" + user.full_id() + " ";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == RPL_AWAY)
+	{
+		std::string const_msg = command.get_cmd() + " 301 : " + user.get_away_msg() + "\n";
+		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 301 : " + user.get_away_msg() + "\n" + user.full_id() + " ";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == ERR_UNKNOWNCOMMAND)
+	{
+		std::string const_msg = command.get_cmd() + " 421 :Unknown command " ;
+		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 421 :Unknown command " + user.full_id() + " ";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == RPL_WHOISUSER)
+	{
+		User *tmp = getuserbynick(command.get_cmd_params().front());
+
+		std::string	full_msg = tmp->get_nickname() + " " + tmp->get_username() + " " + tmp->get_hostname() + " * :" + tmp->get_realname() + "\n";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == RPL_WHOISSERVER)
+	{
+		User *tmp = getuserbynick(command.get_cmd_params().front());
+
+		std::string	full_msg = tmp->get_nickname() + " " + this->__name + " \n"; // ADD SERVER INFO
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == RPL_ENDOFWHOIS)
+	{
+		User *tmp = getuserbynick(command.get_cmd_params().front());
+
+		std::string	full_msg = tmp->get_nickname() + " :End of WHOIS list\n";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == RPL_LUSERCLIENT)
+	{
+		std::string	full_msg = ":There are " + std::to_string(this->__users.size()) + " users\n";// + " and " + number of services + " services on " + number of servers (in our case 1) " servers\n";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == RPL_LUSEROP)
+	{
+		int	nbr_of_OPs = 0;
+
+		for (std::list<User>::iterator it = this->__users.begin(); it != this->__users.end(); it++)
+		{
+			if ((*it).get_modes().get_o() || (*it).get_modes().get_O())
+				nbr_of_OPs++;
+		}
+		std::string	full_msg = std::to_string(nbr_of_OPs) + " :operator(s) online\n";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == RPL_LUSERUNKNOWN)
+	{
+		std::string	full_msg = std::to_string(this->__nbr_of_unknown_conns) + " :unknown connection(s)\n";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == RPL_LUSERCHANNELS)
+	{
+		std::string	full_msg = std::to_string(this->__channels.size()) + " :channels formed\n";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	else if (reply_code == RPL_LUSERME)
+	{
+		std::string	full_msg = ":I have " + std::to_string(this->__users.size()) + " clients\n";
+		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+	}
+	// else if (reply_code == RPL_JOINED)
+	// {
+		
+	// }
 	return 1;
 }
 
