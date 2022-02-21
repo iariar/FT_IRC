@@ -25,7 +25,7 @@ class Channel;
 #include <fcntl.h>
 #include "msg_parse.hpp"
 #include <set>
-#include	<string>  
+#include <fstream>  
 
 #define RPL_WELCOME 001
 #define RPL_UNAWAY 305
@@ -39,6 +39,7 @@ class Channel;
 #define ERR_NONICKNAMEGIVEN 431
 #define ERR_ERRONEUSNICKNAME 432
 #define ERR_NICKNAMEINUSE 433
+#define ERR_USERNOTINCHANNEL 441
 #define ERR_NOTONCHANNEL 442
 #define ERR_USERONCHANNEL 443
 #define ERR_NOTREGISTERED 451
@@ -66,6 +67,14 @@ class Channel;
 #define RPL_LUSERCHANNELS 254
 #define RPL_LUSERME 255
 #define RPL_JOINED 503
+#define RPL_MOTDSTART 375
+#define RPL_MOTD 372
+#define RPL_ENDOFMOTD 376
+#define ERR_NOMOTD 422
+#define RPL_NAMREPLY 353
+#define RPL_ENDOFNAMES 366
+#define RPL_LIST 322
+#define RPL_LISTEND 323
 // #define ERR_NOSUCHCHANNEL 503
 
 
@@ -161,7 +170,13 @@ class Server
 		void							part_from_all_channels(User &user);
 		int								is_real_user(std::string nickname);
 		User 							*find_user_in_channel_by_nick(std::string nickname, Channel chan);
-		int								is_operator_on_channel(User user, Channel chan);
+		int								is_operator_on_channel(User &user, Channel &chan);
+		void							MOTD_handler(msg_parse &command, User &user);
+		void							NAMES_handler(msg_parse &command, User &user);
+		void							LIST_handler(msg_parse &command, User &user);
+		void							KICK_handler(User &user, msg_parse &command);
+		int								check_syntax(msg_parse &command);
+		void							as_many(User &user, msg_parse &command);
 };
 
 #endif

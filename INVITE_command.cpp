@@ -22,10 +22,11 @@ User *Server::find_user_in_channel_by_nick(std::string nickname, Channel chan)
 	return (*it);
 }
 
-int		Server::is_operator_on_channel(User user, Channel chan)
+int		Server::is_operator_on_channel(User &user, Channel &chan)
 {
-	for (std::vector<User>::iterator it = chan.get_operators().begin() ; it != chan.get_operators().begin(); it++)
+	for (std::vector<User>::iterator it = chan.get_operators().begin() ; it != chan.get_operators().end(); it++)
 	{
+		std::cout << "inside the loop" << (*it).get_nickname() << std::endl;
 		if ((*it).get_nickname() == user.get_nickname())
 			return (1);
 	}
@@ -61,7 +62,7 @@ void	Server::INVITE_handler(User &user, msg_parse &command)
 		chan = *find_channel(command.get_cmd_params()[1][0], channel_without_prefix.substr(1, channel_without_prefix.length() - 1));
 		if (find_user_in_channel(user, chan) != *chan.get_users().end())
 		{
-			write_reply(user, ERR_NOSUCHCHANNEL, command);
+			write_reply(user, ERR_NOTONCHANNEL, command);
 			return ;
 		}
 		if (is_real_user(command.get_cmd_params()[0]))

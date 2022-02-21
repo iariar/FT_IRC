@@ -24,6 +24,8 @@ Channel		&Channel::operator=(const Channel &rhs)
 	this->__password = rhs.__password;
 	this->__size = rhs.__size;
 	this->__banned = rhs.__banned;
+	this->__operators = rhs.__operators;
+	this->__invited_list = rhs.__invited_list;
 	return *this;
 }
 
@@ -195,4 +197,12 @@ void	Channel::send(Server &serv, std::string message)
 		std::cerr << (*user)->get_nickname() << " > " + message;
 		serv.write_socket((*user)->get_fd(), message);
 	}
+}
+
+bool	Channel::is_operator(std::string nick)
+{
+	for(std::vector<User>::iterator it = this->__operators.begin(); it != this->__operators.end(); it++)
+		if ((*it).get_nickname() == nick)
+			return true;
+	return (false);
 }
