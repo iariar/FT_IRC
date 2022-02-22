@@ -70,37 +70,57 @@ void	Server::as_many(User &user, msg_parse &command)
 			}
 			else if (!is_operator_on_channel(user, chan))
 			{
-				std::cout << "this is the channel name inside condition" <<  chan.get_operators().size() << std::endl;
 				full_msg = ":" + this->__name + " " + command.get_cmd() + " 482 " + chan.get_name() + " :You're not channel operator\n" + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"; 
 				send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 			}
 			else
 			{
-				std::cout << "this is the size " << chan.get_users().size() << std::endl;
-				for (std::list<User *>::iterator it = chan.get_users().begin() ; it != chan.get_users().end(); it++)
-				{
-					std::cout << (*it)->get_nickname();
-				}
-				User kicked_user = find_user_in_channel_by_nick(user_, chan) == *chan.get_users().end();
-				full_msg = "PART " + chan.get_name();
+				// std::cout << " " << chan.get_users().size() << std::endl;
+				// for (std::list<User *>::iterator it = chan.get_users().begin() ; it != chan.get_users().end(); it++)
+				// {
+				// 	std::cout << (*it)->get_nickname();
+				// }
+				std::list<Channel>::iterator chan_it = find_channel(channel_name[0],channel_name.substr(1, channel_name.length() - 1));
+				User *kicked_user = find_user_in_channel_by_nick(user_, chan);
+				full_msg = "PART " + channel_name;
 				msg_parse parting(full_msg);
 				parting.parser();
 				if (command.get_additional_param().size())
-					write_socket(kicked_user.get_fd(), command.get_additional_param());
+					write_socket((*kicked_user).get_fd(), command.get_additional_param());
 				else
-					write_socket(kicked_user.get_fd(), "byeeeee");
-				PART_handler(kicked_user, parting);
-				std::cout << "this is the size " << chan.get_users().size() << std::endl;
-				for (std::list<User *>::iterator it = chan.get_users().begin() ; it != chan.get_users().end(); it++)
-				{
-					std::cout << (*it)->get_nickname();
-				}
+					write_socket((*kicked_user).get_fd(), "byeeeee");
+				PART_handler((*kicked_user), parting);
+				(*chan_it).ban_user(*kicked_user);
+				// for (std::list<User *>::iterator it = chan.get_users().begin() ; it != chan.get_users().end(); it++)
+				// {
+				// 	std::cout << (*it)->get_nickname();
+				// }
 			}
 		}
 		user_index++;
 		prev_user_index = user_index;
 		channel_index++;
 		prev_chan_index = channel_index;
+	}
+}
+
+void	Server::one_chan(User &user, msg_parse &command)
+{
+	std::string channel = command.get_cmd_params()[0];
+	std::string users = command.get_cmd_params()[1];
+	size_t user_index = 0;
+	size_t prev_user_index = 0;
+	std::string user_;
+	while ((user_index = users.find(',', user_index)) != std::string::npos || prev_user_index < users.length())
+	{
+		user_index == std::string::npos ? user_index = users.length() : 0;
+		user_ = users.substr(prev_user_index, user_index - prev_user_index);
+		std::string buff = "PART " + channel + " " + user_; 
+		msg_parse parting_command(buff);
+		parting_command.parser();
+		as_many(user, parting_command);
+		user_index++;
+		prev_user_index = user_index;
 	}
 }
 
@@ -113,12 +133,10 @@ void	Server::KICK_handler(User &user, msg_parse &command)
 		if (!ret)
 			write_socket(user.get_fd() , "wrong syntax !");
 		else if (ret == 2)
-		{
 			as_many(user, command);
-		}
-		else if (ret == 1)
+		else if (ret == 3)
 		{
-
+			one_chan(user, command);
 		}
 	}
 	// else if (command.get_cmd_params().size() > 3)

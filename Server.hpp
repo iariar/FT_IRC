@@ -165,11 +165,11 @@ class Server
 		void							JOIN_handler(User &user, msg_parse &command);
 		void							PART_handler(User &user, msg_parse &command);
 		void							INVITE_handler(User &user, msg_parse &command);
-		User							*find_user_in_channel(User user, Channel &channel);
+		User							*find_user_in_channel(User &user, Channel &channel);
 		void							send_msg_to_channel_users(Channel &chan, std::string &message);
 		void							part_from_all_channels(User &user);
 		int								is_real_user(std::string nickname);
-		User 							*find_user_in_channel_by_nick(std::string nickname, Channel chan);
+		User 							*find_user_in_channel_by_nick(std::string nickname, Channel &chan);
 		int								is_operator_on_channel(User &user, Channel &chan);
 		void							MOTD_handler(msg_parse &command, User &user);
 		void							NAMES_handler(msg_parse &command, User &user);
@@ -177,6 +177,8 @@ class Server
 		void							KICK_handler(User &user, msg_parse &command);
 		int								check_syntax(msg_parse &command);
 		void							as_many(User &user, msg_parse &command);
+		void							one_chan(User &user, msg_parse &command);
+		void							remove_user(User &user);
 };
 
 #endif

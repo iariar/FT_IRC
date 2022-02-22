@@ -11,7 +11,7 @@ int	Server::is_real_user(std::string nickname)
 	return (0);
 }
 
-User *Server::find_user_in_channel_by_nick(std::string nickname, Channel chan)
+User *Server::find_user_in_channel_by_nick(std::string nickname, Channel &chan)
 {
 	std::list<User *>::iterator it = chan.get_users().begin();
 	for ( ; it != chan.get_users().end() ; it++)
@@ -26,7 +26,6 @@ int		Server::is_operator_on_channel(User &user, Channel &chan)
 {
 	for (std::vector<User>::iterator it = chan.get_operators().begin() ; it != chan.get_operators().end(); it++)
 	{
-		std::cout << "inside the loop" << (*it).get_nickname() << std::endl;
 		if ((*it).get_nickname() == user.get_nickname())
 			return (1);
 	}

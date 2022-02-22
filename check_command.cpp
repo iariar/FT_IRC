@@ -25,7 +25,7 @@ void	print_command(msg_parse &command)
 	std::cout << "additional param :" << command.get_additional_param() << "|" << std::endl;
 }
 
-User		*Server::find_user_in_channel(User user, Channel &channel)
+User		*Server::find_user_in_channel(User &user, Channel &channel)
 {
 	std::list<User *>::iterator it = channel.get_users().begin();
 	for (; it != channel.get_users().end() ; it++)
