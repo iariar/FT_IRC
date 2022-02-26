@@ -11,10 +11,13 @@ class Channel;
 #include "User.hpp"
 #include "Channel.hpp"
 #include "Commands.hpp"
+#include "msg_parse.hpp"
 #include <string>
 #include <vector>
+#include <set>
 #include <list>
 #include <iostream>
+#include <fstream>
 #include <sys/select.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -23,9 +26,8 @@ class Channel;
 #include <strings.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "msg_parse.hpp"
-#include <set>
-#include <fstream>  
+#include <netdb.h>
+#include <arpa/inet.h>
 
 #define RPL_WELCOME 001
 #define RPL_UNAWAY 305
@@ -75,6 +77,11 @@ class Channel;
 #define RPL_ENDOFNAMES 366
 #define RPL_LIST 322
 #define RPL_LISTEND 323
+#define ERR_NOCHANMODES 477
+#define ERR_UNKNOWNMODE 472
+#define ERR_USERNOTINCHANNEL 441
+#define ERR_KEYSET 467
+#define ERR_CANNOTSENDTOCHAN 404
 // #define ERR_NOSUCHCHANNEL 503
 
 
@@ -176,11 +183,13 @@ class Server
 		void							LIST_handler(msg_parse &command, User &user);
 		void							KICK_handler(User &user, msg_parse &command);
 		int								check_syntax(msg_parse &command);
-		void							as_many(User &user, msg_parse &command);
-		void							one_chan(User &user, msg_parse &command);
+		void							as_many(User &user, msg_parse &command, int &check_is_op);
+		void							one_chan(User &user, msg_parse &command, int &check_is_op);
 		void							remove_user(User &user);
 		void							send_available_commands(User &user);
 		User							&find_user_in_server(std::string &nickname);
+		void							CHANNEL_MODE_handler(msg_parse &command, User &user);
+		void							add_remove_mode_to_channel(Channel &channel, msg_parse &command, User &user, char c);
 };
 
 #endif
