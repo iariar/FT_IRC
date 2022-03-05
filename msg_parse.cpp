@@ -139,7 +139,7 @@ int	msg_parse::parser( void)
 		return (0);
 	char *tab;
 	params(index, &tab);
-	// additional_param(tab);
+	additional_param(tab);
 	return (1);
 }
 

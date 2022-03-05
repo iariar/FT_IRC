@@ -154,14 +154,14 @@ void	Server::check_command(msg_parse &command, User &user)
 	{
 		user_authentication(command, user);
 	}
-	// else if (user.is_real_user())
-	// {
-			else if (command.get_cmd() == "MODE")
+	else if (user.is_real_user())
+	{
+			if (command.get_cmd() == "MODE")
 				MODE_handler(command, user);
 			else if (command.get_cmd() == "AWAY")
 				AWAY_handler(command, user);
-			else if (command.get_cmd() == "WHOIS")
-				WHOIS_handler(command, user);
+			// else if (command.get_cmd() == "WHOIS")
+			// 	WHOIS_handler(command, user);
 			else if (command.get_cmd() == "LUSERS")
 				LUSERS_handler(command, user);
 			else if (command.get_cmd() == "MOTD")
@@ -173,7 +173,7 @@ void	Server::check_command(msg_parse &command, User &user)
 			else if (command.get_cmd() == "PRIVMSG" || command.get_cmd() == "NOTICE")
 				PRIVMSG_handler(command, user);
 			else if (command.get_cmd() == "QUIT")
-				QUIT_handler(user , command);
+				QUIT_handler(user);
 			else if (command.get_cmd() == "OPER")
 				OPER_handler(user, command);
 			else if (command.get_cmd() == "TOPIC")
@@ -186,27 +186,27 @@ void	Server::check_command(msg_parse &command, User &user)
 				INVITE_handler(user, command);
 			else if (command.get_cmd() == "KICK")
 				KICK_handler(user, command);
-			else
+			else if (command.get_cmd() != "PONG")
 				write_reply(user, ERR_UNKNOWNCOMMAND, command);
-		// }
-		// else
-		// 	write_reply(user, ERR_NOTREGISTERED, command);
+		}
+		else
+			write_reply(user, ERR_NOTREGISTERED, command);
 }
 
 std::string names_reply(User &user, Channel &channel, std::string &serv_name, char c)
 {
 	if (c == '=')
-		return (":" + serv_name + " " + user.get_nickname() + " = " + channel.get_name() + " :");
+		return (":" + serv_name + " 353 "+ user.get_nickname() + " = " + channel.get_name() + " :");
 	if (c == '*')
-		return (":" + serv_name + " " + user.get_nickname() + " * " + channel.get_name() + " :");
+		return (":" + serv_name + " 353 "+ user.get_nickname() + " * " + channel.get_name() + " :");
 	if (c == '@')
-		return (":" + serv_name + " " + user.get_nickname() + " @ " + channel.get_name() + " :");
+		return (":" + serv_name + " 353 "+ user.get_nickname() + " @ " + channel.get_name() + " :");
 	return "";
 }
 
 std::string names_reply(User &user, std::string &serv_name)
 {
-	return ("\n:" + serv_name + " " + user.get_nickname() + " channel * :");
+	return ("\n:" + serv_name + " 353 "+ user.get_nickname() + " channel * :");
 }
 
 int		Server::write_reply(User &user, int reply_code, msg_parse &command)
@@ -218,68 +218,68 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 	}
 	else if (reply_code == ERR_NICKNAMEINUSE)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd_params().front() + " 433 :Nickname is already in use\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 433 NICK :Nickname is already in use\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == RPL_NOWAWAY)
 	{
-		std::string	full_msg = ":" + this->__name + " 306 :You have been marked as being away\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 306 AWAY :You have been marked as being away\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == RPL_UNAWAY)
 	{
-		std::string	full_msg = ":" + this->__name + " 305 :You are no longer marked as being away\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 305 AWAY :You are no longer marked as being away\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_ERRONEUSNICKNAME)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd_params().front() + "432 :Erroneous nickname\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n*/; 
+		std::string	full_msg = ":" + this->__name + " " + command.get_cmd_params().front() + "432 NICK :Erroneous nickname\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_NONICKNAMEGIVEN)
 	{
-		std::string	full_msg = ":" + this->__name + "431 :No nickname given\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 431 NICK :No nickname given\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_NOTREGISTERED)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 451 :You have not registered\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 451 " + command.get_cmd() + ":You have not registered\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_NEEDMOREPARAMS)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 461 :Not enough parameters\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 461 " + command.get_cmd() + " :Not enough parameters\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_PASSWDMISMATCH)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 464 :Password incorrect\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name+ " 464 " + command.get_cmd() + " :Password incorrect\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_ALREADYREGISTRED)
 	{
 		// std::string const_msg = command.get_cmd() + " 462 :Unauthorized command (already registered)\n";
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 462 :Unauthorized command (already registered)\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 462 " + command.get_cmd() + " :Unauthorized command (already registered)\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_UMODEUNKNOWNFLAG)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 501 :Unknown MODE flag\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 501 MODE :Unknown MODE flag\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_USERSDONTMATCH)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 502 :Cannot change mode for other users\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 502 MODE :Cannot change mode for other users\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == RPL_YOUREOPER)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 381 :You are now an IRC operator\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 381 OPER :You are now an IRC operator\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == RPL_TOPIC)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 332 " + command.get_cmd_params()[0] + " :" + command.get_cmd_params()[1] + "\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 332 " + command.get_cmd() +  + command.get_cmd_params()[0] + " :" + command.get_cmd_params()[1] + "\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	// else if (reply_code == RPL_INVITING)
@@ -289,22 +289,22 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 	// }
 	else if (reply_code == ERR_INVITEONLYCHAN)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 473 " + command.get_cmd_params()[0] + " :Cannot join channel (+i)\n" + "\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 473 "+ command.get_cmd() + command.get_cmd_params()[0] + " :Cannot join channel (+i)\n" + "\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_BANNEDFROMCHAN)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 474 " + command.get_cmd_params()[0] + " :Cannot join channel (+b)\n" + "\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name  + " 474 " + command.get_cmd() + command.get_cmd_params()[0] + " :Cannot join channel (+b)\n" + "\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_BADCHANNELKEY)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 475 " + command.get_cmd_params()[0] + " :Cannot join channel (+k)\n" + "\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name  + " 475 " + command.get_cmd() + command.get_cmd_params()[0] + " :Cannot join channel (+k)\n" + "\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_NOTONCHANNEL)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 442 " + command.get_cmd_params()[0] + " :You're not on that channel\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name  + " 442 " + command.get_cmd() + command.get_cmd_params()[0] + " :You're not on that channel\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_NORECIPIENT)
@@ -315,7 +315,7 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 	}
 	else if (reply_code == ERR_CANNOTSENDTOCHAN)
 	{
-		std::string	full_msg = ":" + this->__name + " 404 :Cannot send to channel" + "\n" /*+ user.full_id() + " "*/;
+		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 404 :Cannot send to channel" + "\n" /*+ user.full_id() + " "*/;
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_NOTEXTTOSEND)
@@ -327,13 +327,13 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 	else if (reply_code == ERR_NOSUCHNICK)
 	{
 		// std::string const_msg = command.get_cmd() + " 401 :No such nick/channel\n";
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 401 :No such nick/channel\n"/* + user.full_id() + " "*/;
+		std::string	full_msg = ":" + this->__name + " 401 * :No such nick/channel\n"/* + user.full_id() + " "*/;
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_NOSUCHCHANNEL)
 	{
 		// std::string const_msg = command.get_cmd() + " 401 :No such nick/channel\n";
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd_params()[0] + " 403 :No such channel\n"/* + user.full_id() + " "*/;
+		std::string	full_msg = ":" + this->__name + " 403 " + command.get_cmd_params()[0]+ " :No such channel\n"/* + user.full_id() + " "*/;
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_TOOMANYTARGETS)
@@ -351,28 +351,7 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 	else if (reply_code == ERR_UNKNOWNCOMMAND)
 	{
 		// std::string const_msg = command.get_cmd() + " 421 :Unknown command " ;
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 421 :Unknown command\n"/* + user.full_id() + "\n"*/;
-		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
-	}
-	else if (reply_code == RPL_WHOISUSER)
-	{
-		User *tmp = getuserbynick(command.get_cmd_params().front());
-
-		std::string	full_msg = tmp->get_nickname() + " " + tmp->get_username() + " " + tmp->get_hostname() + " * :" + tmp->get_realname() + "\n";
-		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
-	}
-	else if (reply_code == RPL_WHOISSERVER)
-	{
-		User *tmp = getuserbynick(command.get_cmd_params().front());
-
-		std::string	full_msg = tmp->get_nickname() + " " + this->__name + " \n"; // ADD SERVER INFO
-		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
-	}
-	else if (reply_code == RPL_ENDOFWHOIS)
-	{
-		User *tmp = getuserbynick(command.get_cmd_params().front());
-
-		std::string	full_msg = tmp->get_nickname() + " :End of WHOIS list\n";
+		std::string	full_msg = ":" + this->__name + " 421 " + command.get_cmd() + " :Unknown command\n"/* + user.full_id() + "\n"*/;
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == RPL_LUSERCLIENT)
@@ -409,7 +388,7 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 	}
 	else if (reply_code == ERR_USERONCHANNEL)
 	{
-		std::string	full_msg = ":" + this->__name + " " + command.get_cmd() + " 443 " + command.get_cmd_params()[0] + " "+ command.get_cmd_params()[1] + " :is already on channel\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
+		std::string	full_msg = ":" + this->__name + " 443 " + command.get_cmd_params()[0] + " :is already on channel\n"/* + user.get_nickname() + "!" + user.get_username() + "@" + user.get_hostname() + "\n"*/; 
 		send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 	}
 	else if (reply_code == ERR_CHANOPRIVSNEEDED)
@@ -469,7 +448,7 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 					full_msg = names_reply(user, *it, this->__name, '=');
 					send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 				}
-				else if (find_user_in_channel(user, *it) == *((*it).get_users().end()))
+				else if (find_user_in_channel(user, *it) == *((*it).get_users().end()) && !user.get_modes().get_o())
 					continue ;
 				if ((*it).get_modes().get_p())
 				{
@@ -486,7 +465,7 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 					if (!(*it2)->get_modes().get_i())
 					{
 						full_msg = (*it2)->get_nickname();
-						full_msg = (*it).is_operator((*it2)->get_nickname()) == true ? "@" + full_msg : full_msg;
+						full_msg = (*it).is_operator((*it2)->get_nickname()) == true ? "@" + full_msg : ((*it).has_voice((*it2)->get_nickname()) == true ? "+" + full_msg : full_msg);
 						full_msg = (*it2) != (*it).get_users().back() ? full_msg + " " : full_msg + "\n";
 						send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 						found = -1;
@@ -506,7 +485,7 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 					if (!(*it).get_modes().get_i())
 					{
 						full_msg = (*it).get_nickname();
-						full_msg = (*it).is_channel_op() == true ? "@" + full_msg : full_msg;
+						full_msg = (*it).is_channel_op() == true ? "@" + full_msg : ((*it).has_voice() == true ? "+" + full_msg : full_msg);
 						full_msg = *it != this->__users.back() ? full_msg + " " : full_msg + "\n";
 						send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 					}
@@ -534,7 +513,7 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 						full_msg = names_reply(user, *it, this->__name, '=');
 						send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 					}
-					else if (find_user_in_channel(user, *it) == *((*it).get_users().end()))
+					else if (find_user_in_channel(user, *it) == *((*it).get_users().end()) && !user.get_modes().get_o())
 						continue ;
 					if ((*it).get_modes().get_p())
 					{
@@ -551,7 +530,7 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 						if (!(*it2)->get_modes().get_i())
 						{
 							full_msg = (*it2)->get_nickname();
-							full_msg = (*it).is_operator((*it2)->get_nickname()) == true ? "@" + full_msg : full_msg;
+							full_msg = (*it).is_operator((*it2)->get_nickname()) == true ? "@" + full_msg : ((*it).has_voice((*it2)->get_nickname()) == true ? "+" + full_msg : full_msg);
 							full_msg = (*it2) != (*it).get_users().back() ? full_msg + " " : full_msg + "\n";
 							send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
 							found = -1;
@@ -580,9 +559,12 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 		{
 			for(std::list<Channel>::iterator it = this->__channels.begin(); it != this->__channels.end(); it++)
 			{
-				full_msg = ":" + this->__name + " " + (*it).get_name() + " <#visible> " + ":" + (*it).get_topic() + "\n";
-				send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
-			} 
+				if ((!(*it).get_modes().get_p() && !(*it).get_modes().get_s()) || user.get_modes().get_o() || find_user_in_channel(user, (*it)) != *(*it).get_users().end())
+				{
+					full_msg = ":" + this->__name + " " + (*it).get_prefix() + (*it).get_name() + " :" + (*it).get_topic() + "\n";
+					send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+				}
+			}
 		}
 		else
 		{
@@ -594,8 +576,11 @@ int		Server::write_reply(User &user, int reply_code, msg_parse &command)
 			{
 				if ((it = find_channel(name[0], name.substr(1, name.size() - 1))) != this->__channels.end())
 				{
-					full_msg = ":" + this->__name + " " + (*it).get_name() + " <#visible> " + ":" + (*it).get_topic() + "\n";
-					send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+					if ((!(*it).get_modes().get_p() && !(*it).get_modes().get_s()) || user.get_modes().get_o() || find_user_in_channel(user, (*it)) != *(*it).get_users().end())
+					{
+						full_msg = ":" + this->__name + " " + (*it).get_prefix() + (*it).get_name() + " :" + (*it).get_topic() + "\n";
+						send(user.get_fd(), full_msg.c_str(), full_msg.size(), 0);
+					}
 				}
 				else
 					write_reply(user, ERR_NOSUCHNICK, command);
