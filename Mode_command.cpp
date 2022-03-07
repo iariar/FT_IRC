@@ -9,7 +9,7 @@ int		Server::user_mode_setter(msg_parse &command, User &user)
 		{
 			if (command.get_cmd_params()[1][0] == '+')
 			{
-				for (int i = 1; i < strlen(command.get_cmd_params()[1]); i++)
+				for (size_t i = 1; i < strlen(command.get_cmd_params()[1]); i++)
 				{
 					if (command.get_cmd_params()[1][i] == 'i' || command.get_cmd_params()[1][i] == 'w' || command.get_cmd_params()[1][i] == 'r' || command.get_cmd_params()[1][i] == 's')
 						user.set_modes(command.get_cmd_params()[1][i]);
@@ -17,14 +17,13 @@ int		Server::user_mode_setter(msg_parse &command, User &user)
 					{
 						write_reply(user, ERR_UMODEUNKNOWNFLAG, command);
 						return (0);
-						// break ;
 					}
 				}
 				
 			}
 			else if (command.get_cmd_params()[1][0] == '-')
 			{
-				for (int i = 1; i < strlen(command.get_cmd_params()[1]); i++)
+				for (size_t i = 1; i < strlen(command.get_cmd_params()[1]); i++)
 				{
 					if (command.get_cmd_params()[1][i] == 'i' || command.get_cmd_params()[1][i] == 'w' || command.get_cmd_params()[1][i] == 'o' || command.get_cmd_params()[1][i] == 'O' || command.get_cmd_params()[1][i] == 's')
 						user.unset_modes(command.get_cmd_params()[1][i]);
@@ -32,7 +31,6 @@ int		Server::user_mode_setter(msg_parse &command, User &user)
 					{
 						write_reply(user, ERR_UMODEUNKNOWNFLAG, command);
 						return (0);
-						// break ;
 					}
 				}
 			}
@@ -62,7 +60,7 @@ int		Server::MODE_handler(msg_parse &command, User &user)
 		}
 		else if (ch_name[0] == '!' || ch_name[0] == '#' || ch_name[0] == '&' || ch_name[0] == '+')
 		{
-			if (ch_name[0] == '+') // CHANNEL DOES NOT SUPPORT MODES
+			if (ch_name[0] == '+')
 				write_reply(user, ERR_NOCHANMODES, command);
 			else
 				CHANNEL_MODE_handler(command, user);

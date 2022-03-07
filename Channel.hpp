@@ -15,9 +15,7 @@ class User;
 class Channel
 {
 private:
-	// *	&: Local channel, on ly on this server
 	// *	+: Do not support channel modes
-	// *	!: Creator marked as CHannel OPerator
 	// *	#: other ? normal channel ?
 	char					__prefix;
 	std::string				__name; //
@@ -25,18 +23,17 @@ private:
 	CModes					__modes;
 	std::string				__topic;
 	std::string				__password;
-	int						__size;
+	size_t					__size;
 	std::list<std::string>	__banned;
 	std::vector<User *>		__operators;
 	std::vector<User *>		__voice_privilege;
 	std::vector<User *>		__invited_list;
-	// may need a channel mask
 
 public:
 	// * Copliens form
 	Channel();
 	Channel(const Channel &rhs);
-	Channel(char prefix, std::string name, std::string topic = "", int size = -1);
+	Channel(char prefix, std::string name, std::string topic = "");
 	Channel(std::string full_name, std::string password = "");
 	~Channel();
 	Channel			&operator=(const Channel &rhs);
@@ -44,8 +41,8 @@ public:
 	bool				operator==(const Channel &rhs);
 	bool				operator!=(const Channel &rhs);
 	char				get_prefix() const;
-	int					get_size() const;
-	std::vector<User *>	&get_operators( void) ; //added
+	size_t				get_size() const;
+	std::vector<User *>	&get_operators( void) ;
 	std::vector<User *>	&get_voice_privilege( void);
 	std::string			get_name() const;
 	std::list<User *>	&get_users();
@@ -53,7 +50,7 @@ public:
 	std::string			&get_password( void);
 	CModes				&get_modes();
 	void				set_topic(const std::string topic);
-	void				set_size(int size);
+	void				set_size(size_t size);
 	int					add_user(User *u);
 	int					remove_user(User *u);
 	bool				has_user(User *u);

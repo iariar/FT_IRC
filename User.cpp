@@ -2,9 +2,10 @@
 
 User::User()
 :	__fd(-1),
+	__is_channel_op(false),
+	__has_voice(false),
 	__nick_name(""),
-	__user_name(""),
-	__is_channel_op(false)
+	__user_name("")
 {
 	__pass_checked = FALSE;
 	return ;
@@ -12,9 +13,10 @@ User::User()
 
 User::User(const int &fd, const std::string &nick, const std::string &name)
 :	__fd(fd),
+	__is_channel_op(false),
+	__has_voice(false),
 	__nick_name(nick),
-	__user_name(name),
-	__is_channel_op(false)
+	__user_name(name)
 {
 	__pass_checked = FALSE;
 	return ;
@@ -272,4 +274,10 @@ std::string	User::full_id() const
 
 	res += this->__nick_name + "!" + this->__user_name + "@" + this->__host_name;
 	return res;
+}
+
+void        User::unset_fd()
+{
+    if (this->__fd != -1)
+        close(this->__fd);
 }

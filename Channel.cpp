@@ -30,23 +30,18 @@ Channel		&Channel::operator=(const Channel &rhs)
 	return *this;
 }
 
-Channel::Channel(char prefix, std::string name, std::string topic, int size)
+Channel::Channel(char prefix, std::string name, std::string topic)
 {
-	if (prefix != '#' && prefix != '!' && prefix != '&' && prefix != '+')
+	if (prefix != '#' && prefix != '+')
 	{
 		std::string	str = "received prefix: ";
 		str += prefix;
-		str += ". expected [#|!|&|+]";
-		// throw std::invalid_argument(str);
+		str += ". expected [#|+]";
 	}
-	// if (name == "")
-	// 	throw std::invalid_argument("expected a name");
 	this->__prefix = prefix;
 	this->__name = name;
 	this->__topic = topic;
-	this->__size = size;
-	if (size > -1)
-		this->__modes.set_l(true);
+	this->__size = -1;
 }
 
 Channel::Channel(std::string full_name, std::string password)
@@ -89,7 +84,7 @@ std::list<User *>	&Channel::get_users()
 	return this->__users;
 }
 
-int	Channel::get_size() const
+size_t	Channel::get_size() const
 {
 	return this->__size;
 }
@@ -124,7 +119,7 @@ void	Channel::set_password(std::string pass)
 	__password = pass;
 }
 
-void	Channel::set_size(int size)
+void	Channel::set_size(size_t size)
 {
 	__size = size;
 }

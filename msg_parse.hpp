@@ -9,12 +9,12 @@ class User;
 class msg_parse
 {
 	private:
-		std::string msg; // SHALL NOT exceed 512 characters in length
-		//there are 510 characters maximum allowed for the command and its parameters
-		std::string cmd; // The command MUST either be a valid IRC command or a three (3) digit number represented in ASCII text
+		std::string 		msg;
+		std::string 		cmd;
 		std::vector<char *> cmd_params;
-		std::string space_par;
-		int			pos; // unknown mode position
+		std::string 		space_par;
+		int					pos;
+		int					has_additional_param;
 
 	public:
 		msg_parse &operator=(const msg_parse & f);
@@ -27,14 +27,16 @@ class msg_parse
 		void				additional_param(char *tab);
 		std::string 		get_cmd( void);
 		int					get_pos(void) const;
+		int					get_has_additional_param(void) const;
 		void				set_pos(int pos);
+		void				set_has_additional_param(int pos);
 		void 				set_msg( std::string buff);
 		std::vector<char *> get_cmd_params( void);
 		std::string 		get_msg( void);
 		std::string 		get_additional_param( void);
 };
 
-msg_parse	message_splitter(const char *buffer, int ret, msg_parse &parsed_msg, User &user);
-void		check_command(msg_parse command);
+msg_parse					message_splitter(const char *buffer, int ret, msg_parse &parsed_msg, User &user);
+void						check_command(msg_parse command);
 
 #endif
